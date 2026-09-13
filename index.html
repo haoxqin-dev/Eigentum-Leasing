@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F2F4F2">
+<title>Bilanzwesen · Blöcke 1–5</title>
+<style>
+:root{
+  --paper:#F2F4F2;
+  --card:#FFFFFF;
+  --ink:#182430;
+  --muted:#5D6870;
+  --faint:#8A9299;
+  --rule:#DCE1DD;
+  --deep:#1D5C55;
+  --deep-tint:#E4EEEB;
+  --good:#1C6E52;
+  --good-tint:#E6F1EC;
+  --bad:#97382B;
+  --bad-tint:#F7E9E6;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.55;
+  padding-bottom:env(safe-area-inset-bottom);
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 96px}
+
+header{
+  position:sticky;top:0;z-index:10;background:var(--paper);
+  padding-top:env(safe-area-inset-top);
+  border-bottom:1px solid var(--rule);
+}
+.hrow{max-width:560px;margin:0 auto;padding:12px 16px 10px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-0.01em}
+.stat{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{height:3px;background:var(--rule)}
+.bar>i{display:block;height:3px;background:var(--deep);width:0;transition:width .25s ease}
+
+.chips{max-width:560px;margin:0 auto;padding:10px 16px 12px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;border:1px solid var(--rule);background:var(--card);color:var(--muted);
+  font-size:13px;font-family:inherit;padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip.warn[aria-pressed="true"]{background:var(--bad);border-color:var(--bad)}
+.chip:disabled{opacity:.35}
+
+.meta{font-size:13px;color:var(--faint);margin:20px 0 8px}
+.q{font-family:var(--serif);font-size:19px;line-height:1.45;margin:0 0 18px}
+
+.opts{display:flex;flex-direction:column;gap:9px;margin:0;padding:0;list-style:none}
+.opt{
+  display:block;width:100%;text-align:left;font-family:inherit;font-size:15px;line-height:1.45;
+  background:var(--card);border:1px solid var(--rule);border-radius:10px;
+  padding:13px 14px;color:var(--ink);cursor:pointer;transition:border-color .12s,background .12s;
+}
+.opt:active{background:#F7F9F7}
+.opt:focus-visible{outline:2px solid var(--deep);outline-offset:2px}
+.opt[disabled]{cursor:default}
+.opt .why{display:block;font-size:13.5px;color:var(--muted);margin-top:7px;line-height:1.45}
+.opt.is-correct{border-color:var(--good);background:var(--good-tint)}
+.opt.is-wrong{border-color:var(--bad);background:var(--bad-tint)}
+.opt.is-dim{opacity:.92}
+.tag{display:block;font-size:12px;font-weight:600;margin-bottom:5px;letter-spacing:.01em}
+.opt.is-correct .tag{color:var(--good)}
+.opt.is-wrong .tag{color:var(--bad)}
+
+.expl{
+  margin-top:18px;border-left:3px solid var(--deep);background:var(--deep-tint);
+  border-radius:0 8px 8px 0;padding:13px 15px;font-size:14.5px;line-height:1.55;
+}
+.expl .norm{display:block;font-weight:600;margin-bottom:5px;font-size:13.5px;color:var(--deep)}
+
+.bottom{
+  position:fixed;left:0;right:0;bottom:0;background:var(--paper);
+  border-top:1px solid var(--rule);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+}
+.binner{max-width:560px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.next{
+  flex:1;font-family:inherit;font-size:16px;font-weight:600;color:#fff;background:var(--ink);
+  border:none;border-radius:10px;padding:14px;cursor:pointer;
+}
+.next:disabled{background:#B6BDB8;cursor:default}
+.ghost{
+  font-family:inherit;font-size:14px;color:var(--muted);background:none;border:1px solid var(--rule);
+  border-radius:10px;padding:13px 14px;cursor:pointer;
+}
+.done{text-align:center;padding:40px 8px}
+.done h2{font-family:var(--serif);font-size:22px;font-weight:normal;margin:0 0 10px}
+.done p{color:var(--muted);font-size:15px;margin:0 0 20px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <h1>Bilanzwesen · Blöcke 1–5</h1>
+    <span class="stat" id="stat">0 / 0</span>
+  </div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="chips" id="chips"></div>
+</header>
+
+<main class="wrap" id="main"></main>
+
+<div class="bottom">
+  <div class="binner">
+    <button class="next" id="next" disabled>Antwort wählen</button>
+    <button class="ghost" id="reset">Zurücksetzen</button>
+  </div>
+</div>
+
+<script>
+var KEY = "stb_bilanz_b1_4_v1";
+
+var Q = [
+/* ---------- Block 1 ---------- */
+{b:1,q:"In welchem Buch wird ein Geschäftsvorfall zuerst erfasst?",
+ o:["Im Hauptbuch","Im Grundbuch","Im Nebenbuch","Im Inventar"],a:1,
+ n:"Buchführungsorganisation",
+ e:"Das Grundbuch (Journal) hält alle Geschäftsvorfälle in zeitlicher Reihenfolge fest und bildet die Grundlage der Buchführung. Erst danach erfolgt die Übertragung ins Hauptbuch.",
+ m:["Das Hauptbuch übernimmt die Buchungen erst aus dem Grundbuch.","","Nebenbücher erläutern einzelne Hauptbuchkonten, sie sind kein Erfassungsort für alle Vorfälle.","Das Inventar ist ein Bestandsverzeichnis zum Stichtag, kein laufendes Buch."]},
+
+{b:1,q:"Nach welchem Kriterium ordnet das Hauptbuch die Buchungen?",
+ o:["Zeitlich","Sachlich","Nach Belegnummer","Nach Betragshöhe"],a:1,
+ n:"Buchführungsorganisation",
+ e:"Das Hauptbuch gliedert den Buchungsstoff sachlich auf Sachkonten. Dadurch lassen sich jederzeit Vermögen, Schulden und Erfolg feststellen.",
+ m:["Die zeitliche Ordnung ist Aufgabe des Grundbuchs.","","Die Belegnummer dient der Nachvollziehbarkeit, nicht der Gliederung des Hauptbuchs.","Eine Ordnung nach Betragshöhe kennt die Buchführung nicht."]},
+
+{b:1,q:"In welcher Form wird das Inventar aufgestellt?",
+ o:["In Kontoform","In Staffelform","Als T-Konto","Als Kontenrahmen"],a:1,
+ n:"§ 240 HGB",
+ e:"Das Inventar wird als Liste in Staffelform erstellt. Die Bilanz dagegen steht in Kontoform, also mit Aktiv- und Passivseite nebeneinander.",
+ m:["Die Kontoform ist das Kennzeichen der Bilanz, nicht des Inventars.","","Das T-Konto ist die Darstellungsform eines einzelnen Kontos.","Der Kontenrahmen ist ein Verzeichnis von Konten für eine Branche."]},
+
+{b:1,q:"Welche Angabe enthält das Inventar, die Bilanz aber nicht?",
+ o:["Den Wert der Posten","Die Mengenangaben","Die Bilanzsumme","Das Eigenkapital"],a:1,
+ n:"§ 240 HGB",
+ e:"Das Inventar erfasst jeden Gegenstand einzeln nach Art, Menge und Wert. Die Bilanz fasst zu Bilanzposten zusammen und nennt nur noch Werte.",
+ m:["Werte enthalten beide.","","Die Bilanzsumme gibt es nur in der Bilanz, nicht im Inventar.","Das Eigenkapital wird in der Bilanz ausgewiesen."]},
+
+{b:1,q:"Wie lange sind Buchungsbelege seit dem 01.01.2025 aufzubewahren?",
+ o:["6 Jahre","8 Jahre","10 Jahre","12 Jahre"],a:1,
+ n:"§ 257 Abs. 1 Nr. 4 HGB, § 147 Abs. 3 AO",
+ e:"Das Vierte Bürokratieentlastungsgesetz hat die Frist für Buchungsbelege von 10 auf 8 Jahre verkürzt. Für alle übrigen Zehnjahresunterlagen bleibt es bei 10 Jahren.",
+ m:["6 Jahre gelten für Handels- und Geschäftsbriefe.","","10 Jahre galten für Buchungsbelege bis Ende 2024.","Eine Zwölfjahresfrist kennt das Gesetz nicht."]},
+
+{b:1,q:"Welche Frist gilt für empfangene und abgesandte Handelsbriefe?",
+ o:["6 Jahre","8 Jahre","10 Jahre","Keine Frist"],a:0,
+ n:"§ 257 Abs. 1 Nr. 2 und 3 HGB",
+ e:"Handels- und Geschäftsbriefe unterliegen der sechsjährigen Frist. Dient ein Handelsbrief zugleich als Buchungsbeleg, verlängert sich die Frist.",
+ m:["","8 Jahre gelten für Buchungsbelege.","10 Jahre gelten für Handelsbücher, Inventare und Jahresabschlüsse.","Handelsbriefe sind sehr wohl aufbewahrungspflichtig."]},
+
+{b:1,q:"Wie lange sind Jahresabschlüsse und Inventare aufzubewahren?",
+ o:["6 Jahre","8 Jahre","10 Jahre","Unbegrenzt"],a:2,
+ n:"§ 257 Abs. 1 Nr. 1 HGB, § 147 AO",
+ e:"Für Handelsbücher, Inventare, Eröffnungsbilanzen, Jahresabschlüsse, Lageberichte und die zu ihrem Verständnis erforderlichen Organisationsunterlagen bleibt es bei 10 Jahren.",
+ m:["6 Jahre betreffen Handelsbriefe.","Die Verkürzung auf 8 Jahre gilt ausschließlich für Buchungsbelege.","","Eine unbegrenzte Aufbewahrungspflicht besteht nicht."]},
+
+{b:1,q:"Ein Jahresabschluss für 2025 wird im Juni 2026 aufgestellt. Wann beginnt die Aufbewahrungsfrist?",
+ o:["Am 31.12.2025","Am 30.06.2026","Am 31.12.2026","Am 01.01.2026"],a:2,
+ n:"§ 257 Abs. 5 HGB, § 147 Abs. 4 AO",
+ e:"Die Frist läuft ab dem Schluss des Kalenderjahres, in dem der Abschluss aufgestellt wurde. Maßgeblich ist also 2026, nicht das Geschäftsjahr 2025. Fristende ist damit der 31.12.2036.",
+ m:["Das Geschäftsjahr ist nicht maßgeblich, sondern das Jahr der Aufstellung.","Der Tag der Aufstellung selbst löst die Frist nicht aus.","","Die Frist beginnt mit dem Schluss des Kalenderjahres, nicht mit seinem Beginn."]},
+
+{b:1,q:"Eine Eingangsrechnung wird mit einem Kontierungsstempel versehen. Welche Frist gilt?",
+ o:["6 Jahre, da Handelsbrief","8 Jahre, da sie als Buchungsbeleg dient","10 Jahre, da Handelsbuch","Es gilt die kürzere der beiden Fristen"],a:1,
+ n:"§ 257 Abs. 1 Nr. 4 HGB",
+ e:"Dient ein Handelsbrief zugleich als Buchungsbeleg, etwa durch Buchungsanweisung oder Kontierungsstempel, greift nicht die kürzere Sechsjahresfrist, sondern die Frist für Buchungsbelege.",
+ m:["Die Eigenschaft als Buchungsbeleg verdrängt die kürzere Frist.","","Eine Rechnung ist kein Handelsbuch.","Bei Doppelfunktion gilt immer die längere Frist."]},
+
+{b:1,q:"Was zeigt die Passivseite der Bilanz inhaltlich?",
+ o:["Die Mittelverwendung","Die Mittelherkunft","Den Erfolg der Periode","Den Bestand an liquiden Mitteln"],a:1,
+ n:"§ 247 Abs. 1 HGB",
+ e:"Die Passivseite weist aus, woher das im Unternehmen investierte Kapital stammt, geordnet nach der Rechtsstellung des Investors in Eigen- und Fremdkapital. Die Aktivseite zeigt die Mittelverwendung.",
+ m:["Die Mittelverwendung steht auf der Aktivseite.","","Den Periodenerfolg zeigt die Gewinn- und Verlustrechnung.","Liquide Mittel gehören zum Umlaufvermögen auf der Aktivseite."]},
+
+{b:1,q:"Welche Norm verpflichtet zur Aufstellung der Gewinn- und Verlustrechnung?",
+ o:["§ 242 Abs. 1 HGB","§ 242 Abs. 2 HGB","§ 243 Abs. 2 HGB","§ 246 Abs. 1 HGB"],a:1,
+ n:"§ 242 Abs. 2 HGB",
+ e:"§ 242 Abs. 1 HGB betrifft die Bilanz, Absatz 2 die Gegenüberstellung von Aufwendungen und Erträgen. Absatz 3 fasst beide als Jahresabschluss zusammen.",
+ m:["Absatz 1 regelt die Bilanz.","","§ 243 Abs. 2 HGB verlangt Klarheit und Übersichtlichkeit.","§ 246 Abs. 1 HGB regelt die Vollständigkeit."]},
+
+{b:1,q:"Worin unterscheidet sich der Kontenrahmen vom Kontenplan?",
+ o:["Der Kontenrahmen ist unternehmensindividuell","Der Kontenrahmen ist eine Empfehlung für eine ganze Branche","Der Kontenplan ist gesetzlich vorgeschrieben","Sie sind dasselbe"],a:1,
+ n:"Buchführungsorganisation",
+ e:"Der Kontenrahmen ist ein systematisches Verzeichnis aller Konten eines Wirtschaftszweigs und dient der zwischenbetrieblichen Vergleichbarkeit. Der Kontenplan ist die daraus abgeleitete, betriebsindividuelle Fassung.",
+ m:["Individuell ist der Kontenplan, nicht der Rahmen.","","Auch der Kontenplan ist nicht gesetzlich vorgeschrieben.","Die Begriffe bezeichnen unterschiedliche Ebenen."]},
+
+{b:1,q:"Was kennzeichnet die doppelte Buchführung?",
+ o:["Jeder Beleg wird zweimal abgelegt","Zeitliche und sachliche Ordnung sowie Buchung auf Bestands- und Erfolgskonten","Es werden zwei Bilanzen aufgestellt","Jede Buchung wird von zwei Personen geprüft"],a:1,
+ n:"§ 238 HGB",
+ e:"Charakteristisch ist die doppelte Betrachtung: zeitliche und sachliche Ordnung, mindestens eine Soll- und eine Habenbuchung, Erfassung auf Bestands- und Erfolgskonten und im Ergebnis doppelte Erfolgsermittlung.",
+ m:["Eine doppelte Ablage ist nicht gemeint.","","Zwei Bilanzen entstehen allenfalls bei Handels- und Steuerbilanz, das ist etwas anderes.","Das Vieraugenprinzip ist eine Frage der internen Kontrolle."]},
+
+{b:1,q:"Welches der folgenden ist kein Nebenbuch?",
+ o:["Anlagenbuchhaltung","Lohn- und Gehaltsbuchhaltung","Hauptbuch","Kontokorrentbuchhaltung"],a:2,
+ n:"Buchführungsorganisation",
+ e:"Das Hauptbuch gehört zu den Systembüchern. Nebenbücher erläutern einzelne Hauptbuchkonten im Detail, etwa die Kontokorrent-, Lohn-, Lager- oder Anlagenbuchhaltung.",
+ m:["Die Anlagenkartei ist ein klassisches Nebenbuch.","Die Lohnbuchhaltung ist ein Nebenbuch.","","Hier werden Debitoren und Kreditoren geführt, ein Nebenbuch."]},
+
+{b:1,q:"Welcher GoB steht hinter dem Satz „Keine Buchung ohne Beleg“?",
+ o:["Grundsatz der Belegbarkeit","Grundsatz der Bilanzklarheit","Grundsatz der Vorsicht","Grundsatz der Einzelbewertung"],a:0,
+ n:"GoB, § 238 HGB",
+ e:"Die Belegbarkeit sichert die Nachprüfbarkeit der Buchführung. Sie gehört zu den allgemeinen Grundsätzen ordnungsmäßiger Buchführung.",
+ m:["","Die Bilanzklarheit betrifft Bezeichnung und Gliederung der Bilanzposten.","Die Vorsicht ist ein Bewertungsgrundsatz, § 252 Abs. 1 Nr. 4 HGB.","Die Einzelbewertung steht in § 252 Abs. 1 Nr. 3 HGB."]},
+
+/* ---------- Block 2 ---------- */
+{b:2,q:"Für wen gelten die §§ 264 ff. HGB?",
+ o:["Für alle Kaufleute","Ergänzend für Kapitalgesellschaften","Nur für Genossenschaften","Nur für Versicherungen"],a:1,
+ n:"§ 264 HGB",
+ e:"Die §§ 264 ff. HGB enthalten ergänzende Vorschriften für Kapitalgesellschaften und bestimmte Personenhandelsgesellschaften. Sie treten neben die §§ 238 ff. HGB, ersetzen sie aber nicht.",
+ m:["Für alle Kaufleute gelten die §§ 238 ff. HGB.","","Genossenschaften sind in §§ 336 ff. HGB geregelt.","Versicherungen und Pensionsfonds stehen in §§ 341 ff. HGB."]},
+
+{b:2,q:"Eine GmbH stellt ihren Jahresabschluss auf. Welche Vorschriften gelten?",
+ o:["Nur §§ 264 ff. HGB","Nur §§ 238 ff. HGB","§§ 238 ff. HGB und ergänzend §§ 264 ff. HGB","Ausschließlich das GmbHG"],a:2,
+ n:"§§ 238, 264 HGB",
+ e:"Das dritte Buch des HGB ist als Schalenmodell aufgebaut: Die §§ 238 ff. HGB bilden den Grundstock für alle Kaufleute, die späteren Abschnitte treten rechtsformabhängig hinzu.",
+ m:["Die Grundnormen gelten weiterhin.","Die ergänzenden Vorschriften für Kapitalgesellschaften wären dann übergangen.","","Das GmbHG regelt die Kaufmannseigenschaft, nicht die Rechnungslegung im Einzelnen."]},
+
+{b:2,q:"Welche Bedeutung haben Rechnungslegungsstandards des DRSC?",
+ o:["Sie sind unmittelbar geltendes Recht","Sie sind kein Gesetz, werden aber von der Praxis übernommen oder später kodifiziert","Sie ersetzen das HGB für Kapitalgesellschaften","Sie gelten nur für Kreditinstitute"],a:1,
+ n:"§ 342 HGB",
+ e:"Das DRSC ist als privates Rechnungslegungsgremium im Sinne des § 342 HGB anerkannt. Da es kein gesetzgebendes Organ ist, sind seine Standards kein unmittelbar geltendes Recht.",
+ m:["Private Gremien können kein Recht setzen.","","Das HGB bleibt maßgeblich.","Eine Beschränkung auf Kreditinstitute besteht nicht."]},
+
+{b:2,q:"Wer ist Ist-Kaufmann?",
+ o:["Wer ein Handelsgewerbe betreibt, § 1 HGB","Wer sich freiwillig eintragen lässt, § 2 HGB","Wer kraft Rechtsform Kaufmann ist, § 6 HGB","Wer ein Gewerbe angemeldet hat"],a:0,
+ n:"§ 1 Abs. 1 HGB",
+ e:"Der Ist-Kaufmann ist bereits mit Beginn der gewerblichen Betätigung Kaufmann, auch ohne Eintragung. Ausnahme: Kleingewerbetreibende nach § 1 Abs. 2 HGB.",
+ m:["","Das beschreibt den Kann-Kaufmann.","Das beschreibt den Formkaufmann.","Die Gewerbeanmeldung ist gewerberechtlich, nicht handelsrechtlich maßgeblich."]},
+
+{b:2,q:"Eine Kleingewerbetreibende lässt sich freiwillig ins Handelsregister eintragen. Was folgt daraus?",
+ o:["Nichts, sie bleibt Nichtkaufmann","Sie wird Kann-Kauffrau nach § 2 HGB und unterliegt §§ 238 ff. HGB","Sie wird Formkauffrau nach § 6 HGB","Die Eintragung ist unwirksam"],a:1,
+ n:"§ 2 HGB",
+ e:"Mit der freiwilligen Eintragung gelten die Vorschriften über den Kaufmann, einschließlich der Buchführungspflicht nach §§ 238 bis 241 HGB. Ob § 241a HGB befreit, ist gesondert zu prüfen.",
+ m:["Die Eintragung hat konstitutive Wirkung.","","Formkaufmann wird man nur kraft Rechtsform.","Die freiwillige Eintragung ist ausdrücklich zulässig."]},
+
+{b:2,q:"Für wen gilt die Befreiung des § 241a HGB?",
+ o:["Für alle Kaufleute","Nur für Einzelkaufleute","Nur für Personenhandelsgesellschaften","Für alle außer Kapitalgesellschaften"],a:1,
+ n:"§ 241a HGB",
+ e:"Die Befreiung ist ausschließlich Einzelkaufleuten vorbehalten. OHG, KG, GmbH und AG bleiben unabhängig von ihrer Größe buchführungspflichtig.",
+ m:["Gesellschaften sind ausgenommen.","","Personenhandelsgesellschaften werden gerade nicht erfasst.","Auch eine OHG kann sich nicht auf § 241a HGB berufen."]},
+
+{b:2,q:"Welche Grenzen nennt § 241a HGB?",
+ o:["600.000 € Umsatz oder 60.000 € Gewinn","800.000 € Umsatz und 80.000 € Jahresüberschuss","800.000 € Umsatz oder 80.000 € Jahresüberschuss","500.000 € Bilanzsumme"],a:1,
+ n:"§ 241a HGB",
+ e:"Beide Werte müssen kumulativ an den Abschlussstichtagen von zwei aufeinanderfolgenden Geschäftsjahren unterschritten werden. Die Werte wurden mit dem Wachstumschancengesetz 2024 angehoben.",
+ m:["Das sind die bis 2023 geltenden Werte.","","Die Grenzen sind kumulativ, nicht alternativ. Alternativ formuliert ist § 141 AO.","Eine Bilanzsummengrenze kennt § 241a HGB nicht."]},
+
+{b:2,q:"Ein Einzelkaufmann gründet neu. Wann kann § 241a HGB greifen?",
+ o:["Erst nach zwei Geschäftsjahren","Bereits am ersten Abschlussstichtag nach der Neugründung","Erst nach drei Geschäftsjahren","Nie bei Neugründungen"],a:1,
+ n:"§ 241a Satz 2 HGB",
+ e:"Bei Neugründung treten die Rechtsfolgen schon ein, wenn die Größenkriterien am ersten Abschlussstichtag nicht überschritten werden. Man muss nicht zwei Jahre abwarten.",
+ m:["Die Zweijahresregel gilt nur für den laufenden Betrieb.","","Drei Jahre nennt das Gesetz an keiner Stelle.","Neugründungen sind ausdrücklich erfasst."]},
+
+{b:2,q:"Wovon befreit § 242 Abs. 4 HGB?",
+ o:["Von der Buchführung","Von der Aufstellung des Jahresabschlusses","Von der Inventur","Von der Aufbewahrung"],a:1,
+ n:"§ 242 Abs. 4 HGB",
+ e:"§ 241a HGB befreit von Buchführung und Inventar, § 242 Abs. 4 HGB ergänzend von der Pflicht zur Aufstellung eines Jahresabschlusses. Beide greifen unter denselben Größenkriterien.",
+ m:["Die Buchführungsbefreiung steht in § 241a HGB.","","Auch die Inventarbefreiung folgt aus § 241a HGB.","Die Aufbewahrung regelt § 257 HGB."]},
+
+{b:2,q:"Was regelt § 140 AO?",
+ o:["Die originäre steuerliche Buchführungspflicht","Die derivative steuerliche Buchführungspflicht","Die Aufbewahrungsfristen","Die Schätzung von Besteuerungsgrundlagen"],a:1,
+ n:"§ 140 AO",
+ e:"Wer nach anderen Gesetzen, insbesondere dem HGB, buchführungspflichtig ist, hat diese Pflicht auch für die Besteuerung zu erfüllen. Die Pflicht wird also abgeleitet.",
+ m:["Die originäre Pflicht steht in § 141 AO.","","Die Aufbewahrung regelt § 147 AO.","Die Schätzung steht in § 162 AO."]},
+
+{b:2,q:"Wann ist § 141 AO zu prüfen?",
+ o:["Immer parallel zu § 140 AO","Nur wenn sich keine Pflicht bereits aus § 140 AO ergibt","Vor § 140 AO","Nur bei Kapitalgesellschaften"],a:1,
+ n:"§ 141 AO",
+ e:"§ 141 AO ist die Auffangnorm für Steuerpflichtige, die keine Kaufleute im Sinne des HGB sind. Greift bereits § 140 AO, kommt § 141 AO nicht mehr zur Anwendung.",
+ m:["Eine Parallelprüfung ist überflüssig und in der Klausur ein Fehler.","","Die Reihenfolge ist umgekehrt.","Kapitalgesellschaften sind stets schon über § 140 AO erfasst."]},
+
+{b:2,q:"Für wen gilt § 141 AO ausdrücklich nicht?",
+ o:["Für Land- und Forstwirte","Für gewerbliche Unternehmer","Für Freiberufler mit Einkünften nach § 18 EStG","Für Einzelkaufleute"],a:2,
+ n:"§ 141 Abs. 1 AO",
+ e:"§ 141 AO erfasst nur gewerbliche Unternehmer sowie Land- und Forstwirte. Selbstständige und Freiberufler bleiben auch bei hohen Umsätzen und Gewinnen außen vor.",
+ m:["Land- und Forstwirte sind ausdrücklich erfasst.","Gewerbliche Unternehmer sind der Hauptanwendungsfall.","","Einzelkaufleute unterliegen regelmäßig schon § 140 AO."]},
+
+{b:2,q:"Gelten die Grenzen des § 141 AO kumulativ oder alternativ?",
+ o:["Kumulativ, beide müssen überschritten werden","Alternativ, eine Überschreitung genügt","Kumulativ, aber nur bei Land- und Forstwirten","Das Gesetz lässt es offen"],a:1,
+ n:"§ 141 Abs. 1 AO",
+ e:"Das Gesetz verknüpft die Grenzen mit „oder“. Es genügt also, dass entweder der Umsatz 800.000 € oder der Gewinn aus Gewerbebetrieb 80.000 € übersteigt. Genau umgekehrt ist § 241a HGB aufgebaut.",
+ m:["Kumulativ verknüpft ist § 241a HGB, nicht § 141 AO.","","Für Land- und Forstwirte gilt zusätzlich eine Wirtschaftswertgrenze, die Verknüpfung bleibt alternativ.","Die Verknüpfung ergibt sich klar aus dem Wortlaut."]},
+
+{b:2,q:"Ab wann besteht die Buchführungspflicht nach § 141 AO?",
+ o:["Ab dem Jahr der Grenzüberschreitung","Ab Beginn des Wirtschaftsjahres, das auf die Bekanntgabe der Mitteilung folgt","Sofort mit Bekanntgabe der Mitteilung","Ab dem Folgejahr der Steuererklärung"],a:1,
+ n:"§ 141 Abs. 2 Satz 1 AO",
+ e:"Die Grenzüberschreitung allein löst die Pflicht nicht aus. Erforderlich ist eine Mitteilung der Finanzbehörde; die Pflicht beginnt mit dem Wirtschaftsjahr, das auf deren Bekanntgabe folgt.",
+ m:["Die Überschreitung ist nur der Tatbestand, nicht der Beginn.","","Ein unterjähriger Beginn ist ausgeschlossen.","Der Zeitpunkt der Steuererklärung ist unerheblich."]},
+
+{b:2,q:"Ein Bescheid wird am 20.11. zur Post gegeben. Wann gilt er als bekannt gegeben?",
+ o:["Am 20.11.","Am 23.11.","Am 24.11.","Am 27.11."],a:2,
+ n:"§ 122 Abs. 2 Nr. 1 AO",
+ e:"Seit der Änderung gilt die Viertagesfiktion für Inlandssendungen. Bis 2024 waren es drei Tage; ältere Lösungen und Altklausuren rechnen noch mit dem dritten Tag.",
+ m:["Der Tag der Aufgabe zur Post zählt nicht.","Drei Tage galten bis 2024.","","Eine Fünf- oder Siebentagesfrist gibt es für Inlandssendungen nicht."]},
+
+{b:2,q:"Ein Rechtsanwalt erzielt 300.000 € Umsatz und 100.000 € Gewinn. Was gilt?",
+ o:["Buchführungspflicht nach § 141 AO","Buchführungspflicht nach § 140 AO","Keine Buchführungspflicht, aber Aufzeichnungspflichten","Buchführungspflicht nach § 238 HGB"],a:2,
+ n:"§§ 140, 141 AO, § 4 Abs. 3 EStG, § 22 UStG",
+ e:"Der Rechtsanwalt unterhält keinen Gewerbebetrieb, ist also kein Kaufmann. § 141 AO erfasst Freiberufler nicht. Es bleiben die Aufzeichnungspflichten aus § 22 Abs. 2 Nr. 1 UStG und § 4 Abs. 3 EStG sowie die Aufbewahrung nach § 147 Abs. 1 Nr. 5 AO.",
+ m:["Freiberufler sind von § 141 AO ausgenommen, die Zahlen sind bewusst gesetzte Ablenkung.","§ 140 AO setzt eine Pflicht aus einem anderen Gesetz voraus, die hier fehlt.","","Kaufmann ist er nicht, § 238 HGB greift nicht."]},
+
+/* ---------- Block 3 ---------- */
+{b:3,q:"Müssen die drei Merkmale des Vermögensgegenstands kumulativ vorliegen?",
+ o:["Nein, eines genügt","Ja, alle drei müssen erfüllt sein","Nur zwei von drei","Das hängt von der Rechtsform ab"],a:1,
+ n:"GoB, § 246 Abs. 1 HGB",
+ e:"Wirtschaftlicher Wert, selbstständige Bewertbarkeit und selbstständige Verkehrsfähigkeit müssen zusammen vorliegen. Fällt eines weg, liegt kein Vermögensgegenstand vor.",
+ m:["Ein einzelnes Merkmal genügt nicht, sonst wäre jeder Nutzungsvorteil aktivierbar.","","Eine Zweidrittelregel gibt es nicht.","Die Merkmale gelten rechtsformunabhängig."]},
+
+{b:3,q:"Worin liegt der entscheidende Unterschied zwischen Vermögensgegenstand und Wirtschaftsgut?",
+ o:["Im wirtschaftlichen Wert","In der selbstständigen Bewertbarkeit","In der Verkehrsfähigkeit","In der Bewertungshöhe"],a:2,
+ n:"H 4.2 Abs. 1 „Wirtschaftsgut“ EStH",
+ e:"Der Vermögensgegenstand verlangt Einzelveräußerbarkeit, das Wirtschaftsgut nur Übertragbarkeit zumindest mit dem Betrieb. Der steuerliche Begriff ist damit weiter. Die ersten beiden Merkmale sind praktisch deckungsgleich.",
+ m:["Der wirtschaftliche Wert wird bei beiden vorausgesetzt.","Beide verlangen selbstständige Bewertbarkeit.","","Die Bewertung ist eine Frage der Höhe, nicht des Begriffs."]},
+
+{b:3,q:"Wie heißen Schulden in der steuerlichen Terminologie?",
+ o:["Passives Vermögen","Negatives Wirtschaftsgut","Verbindliches Wirtschaftsgut","Schulden, der Begriff ist identisch"],a:1,
+ n:"Steuerliche Terminologie",
+ e:"Das Steuerrecht kennt nur den Oberbegriff Wirtschaftsgut mit Vorzeichen: Vermögensgegenstände sind positive, Schulden negative Wirtschaftsgüter.",
+ m:["Diesen Begriff verwendet das Steuerrecht nicht.","","Auch dieser Begriff existiert nicht.","Das Handelsrecht spricht von Schulden, das Steuerrecht nicht."]},
+
+{b:3,q:"Wie ist ein selbst geschaffener Geschäfts- oder Firmenwert handelsrechtlich zu behandeln?",
+ o:["Aktivierungspflicht","Aktivierungswahlrecht","Aktivierungsverbot","Passivierungspflicht"],a:2,
+ n:"§ 248 Abs. 2 Satz 2 HGB",
+ e:"Beim originären Firmenwert fehlt es an der selbstständigen Bewertbarkeit und an der Einzelveräußerbarkeit. Er ist kein Vermögensgegenstand; das Aktivierungsverbot stellt das ausdrücklich klar.",
+ m:["Eine Pflicht besteht nur beim derivativen Firmenwert.","Ein Wahlrecht gilt für andere selbst geschaffene immaterielle Vermögensgegenstände des Anlagevermögens.","","Ein Firmenwert ist kein Passivposten."]},
+
+{b:3,q:"Warum darf ein entgeltlich erworbener Firmenwert aktiviert werden?",
+ o:["Weil er einzeln veräußerbar ist","Weil § 246 Abs. 1 Satz 4 HGB ihn als Vermögensgegenstand fingiert","Weil er ein Recht im Sinne des BGB ist","Weil er dem Umlaufvermögen zuzuordnen ist"],a:1,
+ n:"§ 246 Abs. 1 Satz 4 HGB",
+ e:"Nach den drei Merkmalen wäre auch der derivative Firmenwert kein Vermögensgegenstand. Das Gesetz fingiert ihn als zeitlich begrenzt nutzbaren Vermögensgegenstand, woraus eine Aktivierungspflicht folgt.",
+ m:["Einzeln veräußerbar ist er gerade nicht, § 23 HGB.","","Ein Recht im Sinne des BGB ist er nicht.","Er gehört zum Anlagevermögen."]},
+
+{b:3,q:"Über welchen Zeitraum ist ein derivativer Firmenwert steuerlich abzuschreiben?",
+ o:["5 Jahre","10 Jahre","15 Jahre","Er ist nicht abnutzbar"],a:2,
+ n:"§ 7 Abs. 1 Satz 3 EStG",
+ e:"Steuerlich gilt zwingend eine Nutzungsdauer von 15 Jahren. Handelsrechtlich wird bei nicht verlässlich schätzbarer Nutzungsdauer über 10 Jahre abgeschrieben. Für den Firmenwert gilt zudem ein Wertaufholungsverbot.",
+ m:["5 Jahre gelten für den Sammelposten nach § 6 Abs. 2a EStG.","10 Jahre ist der handelsrechtliche Auffangwert nach § 253 Abs. 3 Satz 4 HGB.","","Der derivative Firmenwert gilt kraft Gesetzes als abnutzbar."]},
+
+{b:3,q:"Wie viele Wirtschaftsgüter liegen steuerlich bei einem bebauten Grundstück vor?",
+ o:["Eines","Zwei","Drei","Das hängt von der Nutzung ab"],a:1,
+ n:"§ 6 Abs. 1 Nr. 1 und 2 EStG",
+ e:"Zivilrechtlich und handelsrechtlich ist es ein Vermögensgegenstand. Steuerlich sind es zwei Wirtschaftsgüter: Grund und Boden als nicht abnutzbares und das Gebäude als abnutzbares Wirtschaftsgut.",
+ m:["Ein Wirtschaftsgut wäre die zivilrechtliche Sicht.","","Drei Wirtschaftsgüter entstehen erst bei selbstständigen Gebäudeteilen.","Die Zweiteilung gilt unabhängig von der Nutzung."]},
+
+{b:3,q:"Wie wird eine Beteiligung an einer OHG steuerlich behandelt?",
+ o:["Als eigenständiges Wirtschaftsgut","Als anteilige Wirtschaftsgüter nach der Spiegelbildtheorie","Als Finanzanlage mit Aktivierungswahlrecht","Als immaterielles Wirtschaftsgut"],a:1,
+ n:"Transparenzprinzip, Spiegelbildtheorie",
+ e:"Handelsrechtlich liegt ein Vermögensgegenstand vor. Steuerlich werden dem Mitunternehmer aufgrund des Transparenzprinzips die anteiligen Wirtschaftsgüter und Schulden zugerechnet.",
+ m:["Ein eigenständiges Wirtschaftsgut ist es gerade nicht.","","Ein Wahlrecht besteht nicht.","Immateriell wäre die falsche Kategorie."]},
+
+{b:3,q:"Was gilt für den Sammelposten nach § 6 Abs. 2a EStG?",
+ o:["Er ist ein eigenständiges Wirtschaftsgut","Er ist nur ein Verrechnungsposten, kein Wirtschaftsgut","Er ist handelsrechtlich zwingend zu bilden","Er wird über 15 Jahre aufgelöst"],a:1,
+ n:"§ 6 Abs. 2a EStG",
+ e:"Steuerlich liegt kein Wirtschaftsgut vor, sondern ein reiner Verrechnungsposten für Wirtschaftsgüter zwischen 250 € und 1.000 €, der über fünf Jahre aufzulösen ist. Handelsrechtlich bleiben es die einzelnen Vermögensgegenstände.",
+ m:["Gerade nicht, das ist der Kern der Regelung.","","Das HGB kennt den Sammelposten nicht.","Die Auflösung erfolgt über fünf Jahre."]},
+
+{b:3,q:"Ein Unternehmer erhält ein unentgeltliches Nutzungsrecht an einer Maschine. Was gilt?",
+ o:["Aktivierung als immaterielles Wirtschaftsgut","Kein Wirtschaftsgut, da Nutzungsvorteile keine Wirtschaftsgüter sind","Aktivierung mit dem Teilwert","Aktivierung mit dem gemeinen Wert"],a:1,
+ n:"H 4.2 Abs. 1 EStH",
+ e:"Es fehlt am Merkmal, dass sich der Kaufmann die Erlangung etwas kosten lässt, und an der Verkehrsfähigkeit. Wäre das Nutzungsrecht entgeltlich erworben worden, sähe es anders aus.",
+ m:["Ohne Anschaffungskosten fehlt die Bewertungsgrundlage.","","Der Teilwert ist ein Bewertungsmaßstab und beantwortet die Frage dem Grunde nach nicht.","Auch der gemeine Wert hilft hier nicht weiter."]},
+
+{b:3,q:"Wovon ist die selbstständige Bewertbarkeit zu unterscheiden?",
+ o:["Von der selbstständigen Nutzbarkeit nach § 6 Abs. 2 EStG","Von der Einzelveräußerbarkeit","Von der Abnutzbarkeit","Von der Beweglichkeit"],a:0,
+ n:"§ 6 Abs. 2 EStG",
+ e:"Die selbstständige Nutzbarkeit ist Tatbestandsmerkmal der GWG-Regelung. Ein Drucker etwa ist selbstständig bewertbar, aber nicht selbstständig nutzbar.",
+ m:["","Die Einzelveräußerbarkeit ist ein eigenes, drittes Merkmal.","Die Abnutzbarkeit betrifft die Folgebewertung.","Die Beweglichkeit betrifft die Einteilung des Anlagevermögens."]},
+
+{b:3,q:"In welcher Reihenfolge wird in der Bilanzklausur geprüft?",
+ o:["Erst der Höhe nach, dann dem Grunde nach","Erst dem Grunde nach, dann der Höhe nach","Beides gleichzeitig","Die Reihenfolge ist frei"],a:1,
+ n:"Klausurtechnik",
+ e:"Zuerst ist zu klären, ob überhaupt ein Vermögensgegenstand oder eine Schuld vorliegt und wie sie zu qualifizieren sind. Erst danach folgt die Bewertung.",
+ m:["Ohne Bilanzierung dem Grunde nach gibt es nichts zu bewerten.","","Eine gleichzeitige Prüfung führt in der Darstellung zu Brüchen.","Die Reihenfolge ist zwingend."]},
+
+{b:3,q:"Wann ist in der Klausur zu erörtern, ob ein Vermögensgegenstand vorliegt?",
+ o:["Immer und ausführlich","Nur wenn der Sachverhalt daraus ein Problem macht","Nie, das wird vorausgesetzt","Nur bei Kapitalgesellschaften"],a:1,
+ n:"Klausurtechnik",
+ e:"Bei einem gekauften Lkw gehört kein Absatz über Einzelveräußerbarkeit in die Lösung. Diskutiert wird nur, wenn einer der Ausnahmefälle wie Firmenwert oder Nutzungsvorteil im Sachverhalt steckt.",
+ m:["Das kostet Zeit ohne Punkte.","","Ganz weglassen wäre bei Problemfällen ein Fehler.","Die Rechtsform spielt keine Rolle."]},
+
+/* ---------- Block 4 ---------- */
+{b:4,q:"Was definiert § 247 Abs. 2 HGB?",
+ o:["Das Umlaufvermögen","Das Anlagevermögen","Das Eigenkapital","Die Rechnungsabgrenzungsposten"],a:1,
+ n:"§ 247 Abs. 2 HGB",
+ e:"Zum Anlagevermögen gehören die Gegenstände, die bestimmt sind, dauernd dem Geschäftsbetrieb zu dienen. Das Umlaufvermögen ergibt sich im rechtlichen Umkehrschluss.",
+ m:["Das Umlaufvermögen ist nicht positiv definiert.","","Das Eigenkapital wird dort nicht geregelt.","Die Rechnungsabgrenzung steht in § 250 HGB."]},
+
+{b:4,q:"Welches Bewertungsprinzip gilt für das Anlagevermögen?",
+ o:["Strenges Niederstwertprinzip","Gemildertes Niederstwertprinzip","Höchstwertprinzip","Realisationsprinzip"],a:1,
+ n:"§ 253 Abs. 3 Satz 3 HGB",
+ e:"Beim Anlagevermögen ist außerplanmäßig nur bei voraussichtlich dauernder Wertminderung abzuschreiben. Für das Umlaufvermögen gilt dagegen das strenge Niederstwertprinzip.",
+ m:["Das strenge Prinzip gilt für das Umlaufvermögen.","","Das Höchstwertprinzip betrifft Verbindlichkeiten.","Das Realisationsprinzip regelt den Gewinnausweis."]},
+
+{b:4,q:"Welches Prinzip gilt für das Umlaufvermögen?",
+ o:["Gemildertes Niederstwertprinzip","Strenges Niederstwertprinzip","Anschaffungskostenprinzip ohne Ausnahme","Imparitätsprinzip"],a:1,
+ n:"§ 253 Abs. 4 HGB",
+ e:"Beim Umlaufvermögen ist stets auf den niedrigeren beizulegenden Wert abzuschreiben, unabhängig davon, ob die Wertminderung dauerhaft ist.",
+ m:["Das gemilderte Prinzip gilt für das Anlagevermögen.","","Abschreibungen sind gerade vorgesehen.","Das Imparitätsprinzip ist der übergeordnete Gedanke, nicht die konkrete Norm."]},
+
+{b:4,q:"Ein Autohändler hält Pkw zum Verkauf. Wie sind sie einzuordnen?",
+ o:["Anlagevermögen, da Fahrzeuge typische Anlagegüter sind","Umlaufvermögen, da sie nicht dauernd dem Geschäftsbetrieb dienen","Anlagevermögen, wenn sie länger als ein Jahr im Bestand sind","Das Wahlrecht liegt beim Kaufmann"],a:1,
+ n:"§ 247 Abs. 2 HGB",
+ e:"Maßgeblich ist die Zweckbestimmung, nicht die Art des Gegenstands. Fahrzeuge beim Händler und Grundstücke beim Immobilienhändler sind Umlaufvermögen.",
+ m:["Die Art des Gegenstands ist nur ein Anhaltspunkt.","","Die tatsächliche Verweildauer ist allenfalls ein Indiz für die Zweckbestimmung.","Ein freies Wahlrecht besteht nicht, die Widmung muss sachlich tragfähig sein."]},
+
+{b:4,q:"Eine GmbH kauft Aktien, um dauerhaft Dividenden zu erzielen. Wie ist einzuordnen?",
+ o:["Umlaufvermögen","Anlagevermögen","Immaterielles Anlagevermögen","Aktiver Rechnungsabgrenzungsposten"],a:1,
+ n:"§ 247 Abs. 2 HGB",
+ e:"Die Widmung durch den Kaufmann entscheidet. Bei Spekulationsabsicht mit kurzfristiger Veräußerung läge dagegen Umlaufvermögen vor.",
+ m:["Umlaufvermögen wäre es bei Veräußerungsabsicht.","","Aktien sind materielle Werte, genauer Finanzanlagen.","Eine Rechnungsabgrenzung kommt nicht in Betracht."]},
+
+{b:4,q:"Ist Grund und Boden abnutzbar?",
+ o:["Ja, über 33 Jahre","Ja, über 50 Jahre","Nein","Nur bei betrieblicher Nutzung"],a:2,
+ n:"§ 6 Abs. 1 Nr. 2 EStG",
+ e:"Grund und Boden verschleißt nicht, veraltet nicht und unterliegt keiner rechtlichen Befristung. Planmäßige Abschreibungen scheiden aus, möglich bleibt nur eine außerplanmäßige Abschreibung.",
+ m:["33 Jahre entsprechen 3 Prozent AfA bei Gebäuden.","50 Jahre gelten für ältere Gebäude mit 2 Prozent AfA.","","Die betriebliche Nutzung ändert an der fehlenden Abnutzbarkeit nichts."]},
+
+{b:4,q:"Wie ist eine Software zur Erfassung des eigenen Lagerbestands einzuordnen?",
+ o:["Anlagevermögen, immateriell, abnutzbar, unbeweglich","Anlagevermögen, immateriell, nicht abnutzbar","Umlaufvermögen","Anlagevermögen, materiell, beweglich"],a:0,
+ n:"R 5.5 Abs. 1 EStR, H 7.1 EStH",
+ e:"Software ist grundsätzlich immateriell und wird als unbeweglich behandelt. Sie hat eine begrenzte Nutzungsdauer und ist daher planmäßig abzuschreiben. Immateriell heißt nicht unabnutzbar.",
+ m:["","Software veraltet und ist abnutzbar.","Umlaufvermögen wäre sie nur bei Herstellung für einen Kunden.","Immateriell und unbeweglich, nicht materiell und beweglich."]},
+
+{b:4,q:"Wie ist die Umzäunung eines Betriebsgrundstücks einzuordnen?",
+ o:["Beweglich und abnutzbar","Unbeweglich und abnutzbar","Unbeweglich und nicht abnutzbar","Sie ist unselbstständiger Teil des Grund und Bodens"],a:1,
+ n:"H 7.1 EStH",
+ e:"Außenanlagen zählen zu den unbeweglichen Wirtschaftsgütern, die keine Gebäude oder Gebäudeteile sind. Beweglich heißt nicht tragbar, sondern nicht fest mit dem Grund und Boden verbunden.",
+ m:["Die feste Verbindung mit dem Grund und Boden macht sie unbeweglich.","","Eine Umzäunung verschleißt und ist abzuschreiben.","Sie ist ein selbstständiges Wirtschaftsgut."]},
+
+{b:4,q:"Eine Baugesellschaft errichtet ein Musterhaus zur Verkaufsförderung. Wie ist es einzuordnen?",
+ o:["Umlaufvermögen, da Baugesellschaften Häuser verkaufen","Anlagevermögen, da es dauernd dem Geschäftsbetrieb dient","Umlaufvermögen, da es später veräußert werden kann","Es ist nicht bilanzierungsfähig"],a:1,
+ n:"H 6.1 „Musterhäuser“ EStH",
+ e:"Das Musterhaus dient nicht dem Verkauf, sondern soll Kunden zum Erwerb vergleichbarer Häuser animieren. Es dient damit dauernd dem Geschäftsbetrieb und ist abnutzbar und unbeweglich.",
+ m:["Die Branche allein entscheidet nicht, sondern der Zweck des einzelnen Objekts.","","Eine spätere Veräußerungsmöglichkeit ändert die Widmung nicht.","Bilanziert wird es selbstverständlich."]},
+
+{b:4,q:"Eine Baugesellschaft hat am Bilanzstichtag den Rohbau eines Kundenhauses fertiggestellt. Wie ist er einzuordnen?",
+ o:["Anlagevermögen","Umlaufvermögen","Aktiver Rechnungsabgrenzungsposten","Er ist noch nicht zu erfassen"],a:1,
+ n:"H 6.1 „Halbfertige Bauten auf fremdem Grund und Boden“ EStH",
+ e:"Das Gebäude wird für einen Kunden errichtet und verlässt das Unternehmen. Es dient nicht dauernd dem Geschäftsbetrieb, also Umlaufvermögen im Umkehrschluss zu § 247 Abs. 2 HGB.",
+ m:["Anlagevermögen wäre es nur bei eigener dauerhafter Nutzung, etwa als Musterhaus.","","Eine Rechnungsabgrenzung setzt Ausgaben für eine bestimmte Zeit danach voraus.","Halbfertige Erzeugnisse sind zu aktivieren."]},
+
+{b:4,q:"Eine Bank erwirbt ein Gemälde eines anerkannten Meisters für Repräsentationszwecke. Ist es abnutzbar?",
+ o:["Ja, über 15 Jahre","Ja, über die betriebsgewöhnliche Nutzungsdauer","Nein, es fehlt an wirtschaftlicher oder technischer Abnutzung","Nur bei Beschädigung"],a:2,
+ n:"H 7.1 EStH",
+ e:"Bei Werken anerkannter Meister fehlt es an der Abnutzung. Bei Bildern unbekannter Künstler kann die Beurteilung anders ausfallen. Beweglich und materiell ist das Gemälde in beiden Fällen.",
+ m:["15 Jahre gelten für den derivativen Firmenwert.","Eine betriebsgewöhnliche Nutzungsdauer lässt sich gerade nicht bestimmen.","","Eine Beschädigung führt zur außerplanmäßigen Abschreibung, nicht zur planmäßigen AfA."]},
+
+{b:4,q:"PC und Drucker: Wie viele Wirtschaftsgüter liegen vor?",
+ o:["Eines","Zwei","Das hängt vom Kaufpreis ab","Das hängt von der Verkabelung ab"],a:1,
+ n:"Sachgesamtheit",
+ e:"Es fehlt am einheitlichen Nutzungs- und Funktionszusammenhang, beide sind selbstständig bewertbar. Ebenso getrennt zu beurteilen sind Auto und Autotelefon oder Schreibtisch und Rollcontainer.",
+ m:["Ein einheitliches Wirtschaftsgut liegt etwa bei einer Satellitenanlage mit Verkabelung vor.","","Der Kaufpreis ist eine Frage der Bewertung, nicht der Anzahl.","Die Verbindung allein macht aus zwei Geräten kein Wirtschaftsgut."]},
+
+{b:4,q:"Gebäude und Heizungsanlage: Wie viele Wirtschaftsgüter liegen vor?",
+ o:["Eines, da einheitlicher Nutzungs- und Funktionszusammenhang","Zwei, da getrennt bewertbar","Zwei, da die Heizung schneller verschleißt","Das ist ein Wahlrecht"],a:0,
+ n:"Sachgesamtheit",
+ e:"Die Heizungsanlage ist unselbstständiger Gebäudebestandteil. Anders liegt es bei Betriebsvorrichtungen, bei denen ein einheitlicher Zusammenhang ausdrücklich verneint wird.",
+ m:["","Die Heizung ist nicht selbstständig bewertbar.","Unterschiedliche Nutzungsdauern begründen kein eigenes Wirtschaftsgut.","Ein Wahlrecht besteht nicht."]},
+
+{b:4,q:"Wie sind Gebäude und Betriebsvorrichtung zu beurteilen?",
+ o:["Einheitliches Wirtschaftsgut","Kein einheitlicher Nutzungs- und Funktionszusammenhang, also zwei Wirtschaftsgüter","Die Betriebsvorrichtung ist nicht aktivierungsfähig","Die Betriebsvorrichtung folgt dem Gebäude"],a:1,
+ n:"H 7.1 EStH, Abgrenzungserlass",
+ e:"Die Betriebsvorrichtung dient unmittelbar dem Gewerbebetrieb und nicht der Nutzung des Gebäudes. Sie ist deshalb ein eigenständiges, bewegliches Wirtschaftsgut, obwohl sie wesentlicher Bestandteil sein kann.",
+ m:["Gerade nicht, der Zusammenhang wird verneint.","","Sie ist ein eigenständiges Wirtschaftsgut und zu aktivieren.","Sie wird eigenständig abgeschrieben, meist als bewegliches Wirtschaftsgut."]},
+
+{b:4,q:"Was umfasst der Begriff der Schulden?",
+ o:["Nur Verbindlichkeiten","Verbindlichkeiten und Rückstellungen","Verbindlichkeiten und passive Rechnungsabgrenzung","Alle Passivposten"],a:1,
+ n:"§ 247 Abs. 1 HGB",
+ e:"Schulden sind der Oberbegriff für Verbindlichkeiten und Rückstellungen. Eigenkapital und passive Rechnungsabgrenzungsposten sind gesondert auszuweisen.",
+ m:["Rückstellungen fehlen.","","Die passive Rechnungsabgrenzung ist gesondert auszuweisen.","Das Eigenkapital ist keine Schuld."]},
+
+{b:4,q:"Warum ist das allgemeine Unternehmerrisiko keine Schuld?",
+ o:["Weil es nicht rechtlich begründet ist","Weil es nicht selbstständig bewertbar und nicht abgrenzbar ist","Weil es erst künftig entsteht","Weil es steuerlich nicht abziehbar ist"],a:1,
+ n:"Schuldbegriff, § 249 HGB",
+ e:"Eine Schuld muss als solche abgrenzbar sein und darf nicht bloß Ausfluss des allgemeinen Unternehmerrisikos sein. Genau daran scheitert die Passivierung.",
+ m:["Auch wirtschaftliche Leistungsverpflichtungen genügen, es muss nicht rechtlich sein.","","Auch künftige Belastungen können passiviert werden, wenn sie hinreichend sicher erwartet werden.","Die steuerliche Abziehbarkeit ist eine Folgefrage, kein Merkmal."]},
+
+{b:4,q:"Für welches Vermögen ist die Unterteilung in abnutzbar, beweglich und materiell relevant?",
+ o:["Für Anlage- und Umlaufvermögen gleichermaßen","Nur für das Anlagevermögen","Nur für das Umlaufvermögen","Nur für immaterielle Werte"],a:1,
+ n:"§ 247 Abs. 2 HGB",
+ e:"Beim Umlaufvermögen knüpfen an diese Merkmale keine bilanzrechtlichen Folgen an, weil ohnehin nicht planmäßig abgeschrieben wird. Deshalb entfallen die Zusatzangaben dort.",
+ m:["Beim Umlaufvermögen sind die Merkmale ohne Folgen.","","Genau umgekehrt.","Die Unterteilung betrifft auch materielle Werte."]},
+
+/* ---------- Block 5 ---------- */
+{b:5,q:"Wem ist ein Wirtschaftsgut im Grundsatz zuzurechnen?",
+ o:["Dem Besitzer","Dem zivilrechtlichen Eigentümer","Dem wirtschaftlichen Eigentümer","Demjenigen, der es finanziert"],a:1,
+ n:"§ 39 Abs. 1 AO, § 246 Abs. 1 Satz 2 HGB",
+ e:"Ausgangspunkt ist immer die zivilrechtliche Zurechnung. Nur wenn rechtliches und wirtschaftliches Eigentum auseinanderfallen, ist weiterzuprüfen.",
+ m:["Bloßer Besitz genügt nicht.","","Das wirtschaftliche Eigentum ist die Ausnahme, nicht der Grundsatz.","Die Finanzierung allein begründet keine Zurechnung."]},
+
+{b:5,q:"Wie werden Schulden zugerechnet, wenn rechtliches und wirtschaftliches Eigentum auseinanderfallen?",
+ o:["Wirtschaftlich, wie Vermögensgegenstände","Rechtlich, beim Schuldner","Beim wirtschaftlich Belasteten","Wahlweise"],a:1,
+ n:"§ 246 Abs. 1 Satz 3 HGB",
+ e:"Für Vermögensgegenstände gilt die wirtschaftliche Betrachtung, für Schulden bleibt es bei der rechtlichen Zurechnung. Das ist eine bewusste Asymmetrie.",
+ m:["Für Schulden gilt die wirtschaftliche Betrachtung gerade nicht.","","Eine solche Kategorie kennt das Gesetz nicht.","Ein Wahlrecht besteht nicht."]},
+
+{b:5,q:"Wann liegt wirtschaftliches Eigentum vor?",
+ o:["Wenn jemand die Sache besitzt","Wenn jemand den Eigentümer für die gewöhnliche Nutzungsdauer wirtschaftlich von der Einwirkung ausschließt","Wenn jemand den Kaufpreis bezahlt hat","Wenn jemand die Sache versichert hat"],a:1,
+ n:"§ 39 Abs. 2 Nr. 1 Satz 1 AO",
+ e:"Entscheidend ist die dauerhafte wirtschaftliche Entmachtung des Eigentümers. Die Kontrollfrage lautet: Kann der Eigentümer im normalen Verlauf noch etwas mit der Sache anfangen?",
+ m:["Ein Mietwagen für drei Tage begründet kein wirtschaftliches Eigentum.","","Die Zahlung ist ein Indiz, aber kein Tatbestandsmerkmal.","Die Versicherung ist nur ein Indiz für den Gefahrübergang."]},
+
+{b:5,q:"Welche drei Fälle nennt § 39 Abs. 2 Nr. 1 Satz 2 AO ausdrücklich?",
+ o:["Miete, Pacht, Leihe","Treuhand, Sicherungseigentum, Eigenbesitz","Kauf, Tausch, Schenkung","Leasing, Factoring, Kommission"],a:1,
+ n:"§ 39 Abs. 2 Nr. 1 Satz 2 AO",
+ e:"Bei diesen drei Konstellationen ordnet das Gesetz die Zurechnung unmittelbar an. Du musst die wirtschaftliche Entmachtung nicht mehr begründen, sondern nur subsumieren.",
+ m:["Diese Verträge sind nicht genannt.","","Übereignungsgeschäfte sind nicht gemeint.","Leasing und Factoring werden über Satz 1 gelöst, nicht über Satz 2."]},
+
+{b:5,q:"Ein Lkw wird unter Eigentumsvorbehalt geliefert, der Käufer zahlt vereinbarungsgemäß. Wer bilanziert?",
+ o:["Der Verkäufer bis zur vollständigen Zahlung","Der Käufer, § 39 Abs. 2 Nr. 1 AO","Beide anteilig nach Zahlungsstand","Niemand, bis das Eigentum übergeht"],a:1,
+ n:"§ 449 BGB, § 39 Abs. 2 Nr. 1 AO",
+ e:"Der Verkäufer bleibt zwar Eigentümer, kann aber von seinen Rechten aus § 903 BGB keinen Gebrauch machen, solange gezahlt wird. Der Käufer aktiviert den Lkw und passiviert die Kaufpreisverbindlichkeit in voller Höhe.",
+ m:["Der Eigentumsvorbehalt dient nur der Sicherung, er verhindert die Zurechnung nicht.","","Eine anteilige Zurechnung gibt es nicht.","Der Lkw ist in jedem Fall bei jemandem zu bilanzieren."]},
+
+{b:5,q:"Ein Unternehmer übereignet seiner Bank Maschinen zur Sicherheit und nutzt sie weiter. Wer bilanziert?",
+ o:["Die Bank als Eigentümerin","Der Sicherungsgeber","Beide je zur Hälfte","Die Bank, sobald das Darlehen notleidend wird"],a:1,
+ n:"§ 39 Abs. 2 Nr. 1 Satz 2 AO",
+ e:"Die Sicherungsübereignung ist ausdrücklich genannt. Die Bank erlangt das Eigentum nur zu Sicherungszwecken und bilanziert lediglich ihre Darlehensforderung.",
+ m:["Das wäre die rein zivilrechtliche Betrachtung.","","Eine Aufteilung sieht das Gesetz nicht vor.","Die Zurechnung ändert sich nicht nach Zahlungsverhalten."]},
+
+{b:5,q:"Verkaufskommission: Wer bilanziert die noch nicht verkaufte Ware am Bilanzstichtag?",
+ o:["Der Kommissionär","Der Kommittent","Der Endkunde","Niemand, sie ist schwebend"],a:1,
+ n:"§§ 383 ff. HGB",
+ e:"Der Kommissionär wird weder rechtlicher noch wirtschaftlicher Eigentümer. Die Merkregel lautet: Kommissionsware ist niemals beim Kommissionär zu bilanzieren.",
+ m:["Genau das ist ausgeschlossen.","","Der Endkunde steht noch gar nicht fest.","Die Ware existiert und ist zu bilanzieren."]},
+
+{b:5,q:"Mit welchem Wert weist der Kommittent die Kommissionsware aus?",
+ o:["Mit dem vereinbarten Verkaufspreis","Mit den Anschaffungskosten","Mit dem gemeinen Wert","Mit dem Teilwert"],a:1,
+ n:"§ 252 Abs. 1 Nr. 4 HGB",
+ e:"Eine Gewinnrealisierung ist noch nicht eingetreten, weil die Ware noch nicht an den Dritten veräußert wurde. Der Ausweis erfolgt daher zu Anschaffungskosten, gegebenenfalls auf einem gesonderten Kommissionswarenkonto.",
+ m:["Damit würde ein noch nicht realisierter Gewinn ausgewiesen.","","Der gemeine Wert ist kein zulässiger Ansatz für eigene Ware.","Der Teilwert kommt allenfalls bei Wertminderung in Betracht."]},
+
+{b:5,q:"Wann erlangt der Kommittent bei der Einkaufskommission das wirtschaftliche Eigentum?",
+ o:["Erst bei körperlicher Übergabe an ihn","Bereits mit dem erfüllten Einkauf durch den Kommissionär","Erst mit vollständiger Zahlung","Erst mit Rechnungsstellung"],a:1,
+ n:"§ 384 Abs. 2 HGB",
+ e:"Mit dem Einkauf durch den Kommissionär hat der Kommittent das wirtschaftliche Eigentum erlangt und bilanziert Ware und Zahlungsverpflichtung. Die Provision gehört zu den Anschaffungsnebenkosten.",
+ m:["Auf die körperliche Übergabe kommt es nicht an.","","Die Zahlung ist nicht maßgeblich.","Die Rechnungsstellung ist unerheblich."]},
+
+{b:5,q:"Wann geht bei einem Grundstückskauf das wirtschaftliche Eigentum über?",
+ o:["Mit dem Abschluss des Kaufvertrags","Mit Übergang von Besitz, Gefahr, Nutzen und Lasten","Mit der Grundbucheintragung","Mit Zahlung der ersten Rate"],a:1,
+ n:"§ 39 Abs. 2 Nr. 1 AO",
+ e:"Die Grundbucheintragung begründet nur das zivilrechtliche Eigentum. Wirtschaftliches Eigentum entsteht regelmäßig früher, nämlich mit dem Übergang von Besitz, Gefahr, Nutzen und Lasten.",
+ m:["Der Vertragsschluss allein reicht nicht, er ist nur das Verpflichtungsgeschäft.","","Das ist der zivilrechtliche, nicht der wirtschaftliche Übergang.","Auf einzelne Ratenzahlungen kommt es nicht an."]},
+
+{b:5,q:"Echtes Factoring: Wer bilanziert die verkaufte Forderung?",
+ o:["Der Verkäufer weiterhin","Die Bank, da sie das Delkredererisiko übernimmt","Beide anteilig","Der Drittschuldner"],a:1,
+ n:"§ 39 Abs. 2 Nr. 1 AO, § 246 Abs. 1 Satz 2 HGB",
+ e:"Mit der Übernahme des Ausfallrisikos wird die Bank wirtschaftliche Eigentümerin. Beim Verkäufer scheidet die Forderung aus, er weist stattdessen ein Guthaben bei Kreditinstituten aus.",
+ m:["Das gilt nur beim unechten Factoring.","","Eine Aufteilung findet nicht statt.","Der Schuldner bilanziert eine Verbindlichkeit, nicht die Forderung."]},
+
+{b:5,q:"Was kennzeichnet das Operating-Leasing?",
+ o:["Unkündbare Grundmietzeit mit Vollamortisation","Kurzfristige Nutzung, Zurechnung beim Geber nach § 39 Abs. 1 AO","Zurechnung stets beim Nehmer","Spezielle Anfertigung für den Nehmer"],a:1,
+ n:"§ 39 Abs. 1 AO",
+ e:"Beim Operating-Leasing steht die kurzfristige Nutzung im Vordergrund, die Finanzierung spielt keine Rolle. Die Raten sind beim Nehmer schlicht Betriebsausgaben.",
+ m:["Das beschreibt das Finanzierungs-Leasing.","","Beim Operating-Leasing bleibt es beim Geber.","Das ist Spezial-Leasing."]},
+
+{b:5,q:"Welche zwei Voraussetzungen hat Finanzierungs-Leasing?",
+ o:["Kaufoption und Andienungsrecht","Unkündbare Grundmietzeit und Deckung der Kosten des Gebers durch die Raten","Laufzeit über fünf Jahre und bewegliches Wirtschaftsgut","Schriftform und Notarielle Beurkundung"],a:1,
+ n:"Leasing-Erlass vom 19.04.1971",
+ e:"Erforderlich sind eine Grundmietzeit, während der beide Parteien bei vertragsgemäßer Erfüllung nicht kündigen können, und Raten, die mindestens die Anschaffungs- oder Herstellungskosten sowie alle Nebenkosten einschließlich der Finanzierungskosten decken.",
+ m:["Optionen sind möglich, aber keine Voraussetzung.","","Eine feste Mindestlaufzeit gibt es nicht.","Formvorschriften spielen keine Rolle."]},
+
+{b:5,q:"Wozu dient die Unterscheidung zwischen Voll- und Teilamortisation?",
+ o:["Sie entscheidet unmittelbar über die Zurechnung","Sie bestimmt, welcher Erlass anzuwenden ist","Sie bestimmt die Nutzungsdauer","Sie entscheidet über die Umsatzsteuer"],a:1,
+ n:"Erlasse vom 19.04.1971 und 22.12.1975",
+ e:"Die Einordnung sagt noch nichts darüber aus, wer bilanziert. Sie legt nur fest, nach welchem Regelwerk weitergeprüft wird: Vollamortisations-Erlass oder Teilamortisations-Erlass.",
+ m:["Die Zurechnung ergibt sich erst aus den nachfolgenden Kriterien.","","Die Nutzungsdauer folgt aus der AfA-Tabelle.","Die Umsatzsteuer ist eine gesonderte Frage."]},
+
+{b:5,q:"Wie wird Spezial-Leasing zugerechnet?",
+ o:["Nach den Prozentgrenzen wie andere Verträge","Stets dem Leasingnehmer, ohne weitere Abwägung","Stets dem Leasinggeber","Je nach vereinbarter Option"],a:1,
+ n:"Leasing-Erlass vom 19.04.1971",
+ e:"Spezial-Leasing betrifft Gegenstände, die speziell auf die Verhältnisse des Nehmers zugeschnitten und danach nur noch bei ihm sinnvoll verwendbar sind. Die Zurechnung erfolgt mit und ohne Optionsklausel beim Nehmer.",
+ m:["Die Prozentgrenzen werden gerade nicht geprüft.","","Beim Geber wäre der Gegenstand wirtschaftlich wertlos.","Die Option ist unerheblich."]},
+
+{b:5,q:"Grundmietzeit 35 % der betriebsgewöhnlichen Nutzungsdauer, keine Option. Wem ist zuzurechnen?",
+ o:["Dem Leasinggeber","Dem Leasingnehmer","Beiden anteilig","Das lässt sich nicht entscheiden"],a:1,
+ n:"Leasing-Erlass vom 19.04.1971",
+ e:"Unter 40 Prozent werden die vollen Kosten in unverhältnismäßig kurzer Zeit abbezahlt. Wirtschaftlich liegt ein verdeckter Ratenkauf vor, also Zurechnung beim Nehmer.",
+ m:["Beim Geber liegt der Fall nur im Korridor von 40 bis 90 Prozent.","","Eine anteilige Zurechnung gibt es nicht.","Der Erlass gibt eine klare Antwort."]},
+
+{b:5,q:"Grundmietzeit 95 % der Nutzungsdauer, keine Option. Wem ist zuzurechnen?",
+ o:["Dem Leasinggeber","Dem Leasingnehmer","Dem Hersteller","Je nach Ratenhöhe"],a:1,
+ n:"Leasing-Erlass vom 19.04.1971",
+ e:"Über 90 Prozent ist der Gegenstand am Ende der Grundmietzeit praktisch verbraucht. Der Geber hat sich wirtschaftlich entäußert, weil er nichts Verwertbares zurückbekommt.",
+ m:["Der Geber hätte keinen sinnvollen Restwert mehr.","","Der Hersteller ist nicht Vertragspartei.","Die Ratenhöhe ist bereits in Schritt 1 geprüft."]},
+
+{b:5,q:"Grundmietzeit 70 % der Nutzungsdauer, keine Kauf- oder Verlängerungsoption. Wem ist zuzurechnen?",
+ o:["Dem Leasinggeber","Dem Leasingnehmer","Das hängt vom Restwert ab","Das hängt von der Ratenhöhe ab"],a:0,
+ n:"Leasing-Erlass vom 19.04.1971",
+ e:"Im Korridor von 40 bis 90 Prozent bleibt dem Geber ein wirtschaftlich sinnvoller Restwert. Ohne Option ist die Prüfung damit beendet.",
+ m:["","Ohne Option gibt es keinen Grund für eine abweichende Zurechnung.","Ein Restwertvergleich ist nur bei Optionen anzustellen.","Die Ratenhöhe wurde bereits in Schritt 1 gewürdigt."]},
+
+{b:5,q:"Grundmietzeit 75 % der Nutzungsdauer, Kaufoption zu einem Preis unter dem linearen Buchwert. Wem ist zuzurechnen?",
+ o:["Dem Leasinggeber, da 75 % im Korridor liegen","Dem Leasingnehmer","Dem Geber bis zur Ausübung, danach dem Nehmer","Das entscheidet sich erst bei Ausübung"],a:1,
+ n:"§ 39 Abs. 2 Nr. 1 AO, Leasing-Erlass",
+ e:"Der Korridor von 40 bis 90 Prozent führt nur dann zum Geber, wenn zusätzlich der Optionspreis mindestens dem Buchwert entspricht. Liegt er darunter, wird die Ausübung unterstellt und ab Vertragsbeginn beim Nehmer zugerechnet.",
+ m:["Der Korridor ist kein Ergebnis, sondern eine Zwischenstation.","","Ein Wechsel der Zurechnung findet nicht statt.","Die Ausübung wird unterstellt, nicht abgewartet."]},
+
+{b:5,q:"Welches Kriterium gilt bei einer Mietverlängerungsoption im Korridor von 40 bis 90 %?",
+ o:["Der Optionskaufpreis","Ob die Anschlussmiete den Wertverzehr deckt","Die Dauer der Verlängerung","Die Höhe der Grundmiete"],a:1,
+ n:"Leasing-Erlass vom 19.04.1971",
+ e:"Maßgeblich ist, ob die Anschlussmiete den Wertverzehr deckt, der sich auf Basis des linearen Restbuchwerts und der Restnutzungsdauer laut AfA-Tabelle ergibt. Deckt sie ihn nicht, erfolgt die Zurechnung beim Nehmer.",
+ m:["Einen Kaufpreis gibt es bei dieser Vertragsform nicht.","","Die Dauer ist nicht das Kriterium.","Die Grundmiete wurde bereits in Schritt 1 berücksichtigt."]},
+
+{b:5,q:"Ein Vertrag verlängert sich automatisch, wenn keine Partei kündigt. Wie ist er zu behandeln?",
+ o:["Wie ein Vertrag ohne Option","Wie ein Vertrag mit Mietverlängerungsoption","Wie Spezial-Leasing","Wie Operating-Leasing"],a:1,
+ n:"Leasing-Erlass vom 19.04.1971",
+ e:"Solche Verträge werden grundsätzlich wie Verträge mit Mietverlängerungsoption behandelt. Etwas anderes gilt nur, wenn der Geber nachweislich in einer Vielzahl von Fällen kündigt.",
+ m:["Die faktische Verlängerungsmöglichkeit wirkt wie eine Option.","","Ein Zuschnitt auf den Nehmer liegt nicht vor.","Eine unkündbare Grundmietzeit besteht weiterhin."]},
+
+{b:5,q:"Anschaffungskosten 90.000 €, Nutzungsdauer 4 Jahre, Grundmietzeit 3 Jahre. Wie hoch ist der lineare Buchwert im Optionszeitpunkt?",
+ o:["67.500 €","45.000 €","22.500 €","10.000 €"],a:2,
+ n:"§ 7 Abs. 1 EStG, amtliche AfA-Tabelle",
+ e:"Jährliche AfA 90.000 ÷ 4 = 22.500 €. Nach drei Jahren sind 67.500 € abgeschrieben, der Restbuchwert beträgt 22.500 €. Dass AfA-Betrag und Restbuchwert übereinstimmen, liegt allein an der Nutzungsdauer von vier Jahren.",
+ m:["Das ist die kumulierte AfA nach drei Jahren, nicht der Restbuchwert.","Das wäre der Buchwert nach zwei Jahren.","","Das wäre ein Optionspreis, kein Buchwert."]},
+
+{b:5,q:"Gehören die Finanzierungskosten des Gebers in die Berechnung des Restbuchwerts?",
+ o:["Ja, sie erhöhen die Bemessungsgrundlage","Nein, Fremdkapitalzinsen sind keine Anschaffungskosten","Nur zur Hälfte","Nur bei Teilamortisation"],a:1,
+ n:"§ 255 Abs. 3 Satz 1 HGB",
+ e:"Die Finanzierungskosten sind nur in Schritt 1 relevant, bei der Frage nach Voll- oder Teilamortisation. Der Buchwert bemisst sich allein nach den Anschaffungskosten des Wirtschaftsguts.",
+ m:["Damit entstünde ein Wert, den das Wirtschaftsgut nie hatte.","","Eine hälftige Berücksichtigung gibt es nicht.","Die Vertragsart ändert die Anschaffungskosten nicht."]},
+
+{b:5,q:"Wie ist eine Leasingsonderzahlung zu Vertragsbeginn zu behandeln?",
+ o:["Sofort in voller Höhe als Aufwand","Als Teil der Raten in Schritt 1 und als Aufgeld über die Grundmietzeit zu verteilen","Als nachträgliche Anschaffungskosten","Als Minderung der Verbindlichkeit"],a:1,
+ n:"Leasing-Erlass, § 250 Abs. 1 HGB",
+ e:"Für die Amortisationsprüfung zählt sie zu den Raten. Bilanziell ist sie Aufgeld, also Zins, und über einen aktiven Rechnungsabgrenzungsposten auf die Grundmietzeit zu verteilen.",
+ m:["Der Sofortabzug widerspräche der periodengerechten Abgrenzung.","","Anschaffungskosten des Wirtschaftsguts sind es nicht.","Sie tilgt nicht, sondern ist Zinsbestandteil."]},
+
+{b:5,q:"Mit welchem Wert aktiviert der Leasingnehmer den Gegenstand bei Zurechnung zu ihm?",
+ o:["Mit der Summe aller Leasingraten","Mit den Anschaffungskosten des Leasinggebers","Mit dem Optionspreis","Mit dem gemeinen Wert bei Vertragsbeginn"],a:1,
+ n:"Leasing-Erlass vom 19.04.1971",
+ e:"Aktiviert wird mit den Anschaffungskosten des Gebers, gegebenenfalls einem Schätzwert. In gleicher Höhe ist eine Verbindlichkeit zu passivieren, der Vorgang ist damit erfolgsneutral.",
+ m:["Die Raten enthalten Zins und Gewinnspanne.","","Der Optionspreis ist nur ein künftiger Restbetrag.","Der gemeine Wert ist nicht maßgeblich."]},
+
+{b:5,q:"Ab wann bilanziert der Leasingnehmer, wenn ihm der Gegenstand zuzurechnen ist?",
+ o:["Ab Ausübung der Kaufoption","Ab Vertragsbeginn","Ab Ablauf der Grundmietzeit","Ab der Hälfte der Grundmietzeit"],a:1,
+ n:"§ 39 Abs. 2 Nr. 1 AO",
+ e:"Steht fest, dass die Option ausgeübt wird, war der Vertrag wirtschaftlich von Anfang an ein Ratenkauf. Es gibt keine Mietphase, die später in einen Kauf umschlägt.",
+ m:["Die Ausübung wird unterstellt, nicht abgewartet.","","Ein Wechsel der Zurechnung findet nicht statt.","Eine solche Zäsur kennt der Erlass nicht."]},
+
+{b:5,q:"Über welchen Zeitraum schreibt der Leasingnehmer ab?",
+ o:["Über die Grundmietzeit","Über die betriebsgewöhnliche Nutzungsdauer","Über die kürzere von beiden","Über 15 Jahre"],a:1,
+ n:"§ 7 Abs. 1 EStG",
+ e:"Die AfA richtet sich nach den allgemeinen Abschreibungsvorschriften und damit nach der betriebsgewöhnlichen Nutzungsdauer laut AfA-Tabelle, nicht nach der Vertragslaufzeit.",
+ m:["Die Grundmietzeit ist eine vertragliche, keine wirtschaftliche Größe.","","Eine solche Vergleichsregel gibt es hier nicht.","15 Jahre gelten für den derivativen Firmenwert."]},
+
+{b:5,q:"Zurechnung beim Leasinggeber: Wie behandelt der Nehmer die Raten?",
+ o:["Als Tilgung einer Verbindlichkeit","Als Betriebsausgaben in voller Höhe","Aufgeteilt in Zins und Tilgung","Als Anschaffungskosten"],a:1,
+ n:"§ 4 Abs. 4 EStG",
+ e:"Bleibt der Gegenstand beim Geber, hat der Nehmer nichts zu aktivieren. Die Raten mindern schlicht den Gewinn. Die Aufteilung in Zins und Tilgung ist nur bei Zurechnung zum Nehmer erforderlich.",
+ m:["Eine Verbindlichkeit besteht nicht.","","Das gilt nur bei Zurechnung zum Nehmer.","Anschaffungskosten entstehen nicht."]}
+];
+
+var state = {filter:"all", mode:"all", idx:0, res:{}, answered:false, order:[]};
+
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(raw){ var s = JSON.parse(raw); if(s && s.res) state.res = s.res; }
+  }catch(e){}
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify({res:state.res})); }catch(e){}
+}
+
+function pool(){
+  var list = [];
+  for(var i=0;i<Q.length;i++){
+    if(state.filter !== "all" && Q[i].b !== state.filter) continue;
+    if(state.mode === "wrong" && state.res[i] !== "wrong") continue;
+    list.push(i);
+  }
+  return list;
+}
+
+function buildChips(){
+  var c = document.getElementById("chips");
+  c.innerHTML = "";
+  var defs = [["all","Alle"],[1,"Block 1"],[2,"Block 2"],[3,"Block 3"],[4,"Block 4"],[5,"Block 5"]];
+  defs.forEach(function(d){
+    var b = document.createElement("button");
+    b.className = "chip"; b.textContent = d[1];
+    b.setAttribute("aria-pressed", state.filter === d[0] ? "true" : "false");
+    b.onclick = function(){ state.filter = d[0]; state.idx = 0; state.answered=false; render(); };
+    c.appendChild(b);
+  });
+  var wrongCount = 0;
+  for(var k in state.res){ if(state.res[k]==="wrong") wrongCount++; }
+  var w = document.createElement("button");
+  w.className = "chip warn"; w.textContent = "Fehlerheft (" + wrongCount + ")";
+  w.setAttribute("aria-pressed", state.mode === "wrong" ? "true" : "false");
+  w.disabled = wrongCount === 0 && state.mode !== "wrong";
+  w.onclick = function(){ state.mode = state.mode === "wrong" ? "all" : "wrong"; state.idx = 0; state.answered=false; render(); };
+  c.appendChild(w);
+}
+
+function updateStats(list){
+  var done = 0, good = 0;
+  list.forEach(function(i){ if(state.res[i]){ done++; if(state.res[i]==="correct") good++; } });
+  document.getElementById("stat").textContent = done + " / " + list.length + (done ? "  ·  " + Math.round(good/done*100) + "%" : "");
+  document.getElementById("bar").style.width = list.length ? (done/list.length*100) + "%" : "0";
+}
+
+function render(){
+  buildChips();
+  var list = pool();
+  state.order = list;
+  updateStats(list);
+  var main = document.getElementById("main");
+  var next = document.getElementById("next");
+
+  if(!list.length){
+    main.innerHTML = '<div class="done"><h2>Keine Fragen in dieser Auswahl</h2><p>Wähle einen anderen Block oder verlasse das Fehlerheft.</p></div>';
+    next.disabled = true; next.textContent = "Antwort wählen";
+    return;
+  }
+  if(state.idx >= list.length){
+    var good = 0, tot = 0;
+    list.forEach(function(i){ if(state.res[i]){ tot++; if(state.res[i]==="correct") good++; } });
+    main.innerHTML = '<div class="done"><h2>Durchgang abgeschlossen</h2><p>' + good + ' von ' + tot + ' richtig. Falsch beantwortete Fragen findest du im Fehlerheft.</p></div>';
+    next.disabled = false; next.textContent = "Von vorn beginnen";
+    next.onclick = function(){ state.idx = 0; state.answered = false; render(); };
+    return;
+  }
+
+  var qi = list[state.idx];
+  var item = Q[qi];
+  main.innerHTML = "";
+
+  var meta = document.createElement("div");
+  meta.className = "meta";
+  meta.textContent = "Block " + item.b + "  ·  Frage " + (state.idx+1) + " von " + list.length;
+  main.appendChild(meta);
+
+  var qh = document.createElement("p");
+  qh.className = "q"; qh.textContent = item.q;
+  main.appendChild(qh);
+
+  var ul = document.createElement("ul");
+  ul.className = "opts";
+  item.o.forEach(function(txt, oi){
+    var li = document.createElement("li");
+    var btn = document.createElement("button");
+    btn.className = "opt"; btn.type = "button";
+    btn.textContent = txt;
+    btn.onclick = function(){ answer(qi, oi, ul, item); };
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+  main.appendChild(ul);
+
+  state.answered = false;
+  next.disabled = true;
+  next.textContent = "Antwort wählen";
+  next.onclick = function(){ state.idx++; state.answered=false; render(); window.scrollTo(0,0); };
+}
+
+function answer(qi, chosen, ul, item){
+  if(state.answered) return;
+  state.answered = true;
+  state.res[qi] = (chosen === item.a) ? "correct" : "wrong";
+  save();
+
+  var btns = ul.querySelectorAll(".opt");
+  for(var i=0;i<btns.length;i++){
+    var b = btns[i];
+    b.disabled = true;
+    b.innerHTML = "";
+    var tag = document.createElement("span");
+    tag.className = "tag";
+    var label = document.createElement("span");
+    label.textContent = item.o[i];
+
+    if(i === item.a){
+      b.className = "opt is-correct";
+      tag.textContent = "Richtig";
+      b.appendChild(tag); b.appendChild(label);
+    } else {
+      b.className = "opt " + (i === chosen ? "is-wrong" : "is-dim");
+      if(i === chosen){ tag.textContent = "Deine Antwort"; b.appendChild(tag); }
+      b.appendChild(label);
+      if(item.m[i]){
+        var why = document.createElement("span");
+        why.className = "why"; why.textContent = item.m[i];
+        b.appendChild(why);
+      }
+    }
+  }
+
+  var box = document.createElement("div");
+  box.className = "expl";
+  var nm = document.createElement("span");
+  nm.className = "norm"; nm.textContent = item.n;
+  box.appendChild(nm);
+  box.appendChild(document.createTextNode(item.e));
+  document.getElementById("main").appendChild(box);
+
+  updateStats(state.order);
+  var next = document.getElementById("next");
+  next.disabled = false;
+  next.textContent = (state.idx + 1 >= state.order.length) ? "Auswertung" : "Weiter";
+}
+
+document.getElementById("reset").onclick = function(){
+  if(!confirm("Alle Ergebnisse löschen?")) return;
+  state.res = {}; state.idx = 0; state.mode = "all"; state.answered = false;
+  save(); render();
+};
+
+document.addEventListener("keydown", function(e){
+  if(e.key >= "1" && e.key <= "4" && !state.answered){
+    var b = document.querySelectorAll(".opt")[parseInt(e.key,10)-1];
+    if(b && !b.disabled) b.click();
+  }
+  if(e.key === "Enter" || e.key === " "){
+    var n = document.getElementById("next");
+    if(!n.disabled){ e.preventDefault(); n.click(); }
+  }
+});
+
+load();
+render();
+</script>
+</body>
+</html>
